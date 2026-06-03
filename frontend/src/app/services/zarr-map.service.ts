@@ -469,7 +469,7 @@ export class ZarrMapService {
       source: addCacheToken(definition.storePath, cacheToken),
       variable: definition.variable,
       selector: definition.selector,
-      // Let @carbonplan/zarr-layer derive LV95 extent from x/y cell-center coordinates (± half cell).
+      bounds: definition.bounds,
       fillValue: definition.fillValue,
       colormap: definition.colormap,
       clim: definition.clim,

@@ -26,6 +26,7 @@
     "@ngx-translate/core": "^17.0.0",
     "@ngx-translate/http-loader": "^17.0.0",
     "maplibre-gl": "^5.24.0",
+    "numcodecs": "^0.3.2",
     "proj4": "^2.20.8",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",

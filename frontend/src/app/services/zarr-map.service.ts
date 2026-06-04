@@ -50,6 +50,17 @@ function overviewExtentForMap(map: MaplibreMap): ViewportCellExtent | null {
 
   return viewportCellExtent(west, south, east, north);
 }
+
+function overviewQueryBoundsForExtent(
+  extent: ViewportCellExtent,
+): { west: number; south: number; east: number; north: number } {
+  const coordinates = cellExtentToImageCoordinates(extent);
+  const west = Math.min(coordinates[0][0], coordinates[3][0]);
+  const east = Math.max(coordinates[1][0], coordinates[2][0]);
+  const north = Math.max(coordinates[0][1], coordinates[1][1]);
+  const south = Math.min(coordinates[2][1], coordinates[3][1]);
+  return { west, south, east, north };
+}
 import { OverviewRawCache } from './overview-raw-cache';
 import {
   extentCacheKey,
@@ -85,6 +96,18 @@ export function computeLayerDisplayPlan(
   preferences: Record<string, LayerPreference>,
   managedStates: readonly ManagedLayerDisplayState[],
 ): LayerDisplayPlan {
+  const temperaturePref = preferences['temperature'];
+  const showTemperatureStandalone =
+    !!temperaturePref?.enabled && temperaturePref.importance > 0;
+
+  // Temperature must render from its own Zarr layer to avoid overview tile artifacts.
+  if (showTemperatureStandalone) {
+    return {
+      hasOverview: false,
+      visibleLayerIds: ['temperature'],
+    };
+  }
+
   const activeReadyLayerIds = managedStates
     .filter((state) => {
       const pref = preferences[state.id];
@@ -130,8 +153,16 @@ export interface ZarrLayerState {
 }
 
 const OVERVIEW_SOURCE_ID = 'settlement-overview-image';
+const TRANSPARENT_PIXEL_DATA_URL =
+  'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
 const SINGLE_LAYER_OPACITY = 0.82;
 const WEATHER_LAYER_IDS = new Set(['temperature']);
+const STANDALONE_EXCLUDED_LAYER_IDS = new Set(['temperature']);
+
+function isTemperaturePriorityMode(preferences: Record<string, LayerPreference>): boolean {
+  const temperaturePref = preferences['temperature'];
+  return !!temperaturePref?.enabled && temperaturePref.importance > 0;
+}
 
 export function singleLayerOpacityFromImportance(
   baseOpacity: number,
@@ -144,6 +175,20 @@ export function singleLayerOpacityFromImportance(
   const clampedImportance = Math.min(100, Math.max(0, preference.importance));
   const importanceFactor = clampedImportance / 100;
   return clampedBaseOpacity * importanceFactor;
+}
+
+export function shouldRenderStandaloneExcludedLayer(
+  definition: Pick<ZarrLayerDefinition, 'id' | 'includeInOverview'>,
+  preference: LayerPreference | undefined,
+  ready: boolean,
+): boolean {
+  return (
+    definition.includeInOverview === false &&
+    STANDALONE_EXCLUDED_LAYER_IDS.has(definition.id) &&
+    !!preference?.enabled &&
+    preference.importance > 0 &&
+    ready
+  );
 }
 
 @Injectable({
@@ -450,7 +495,7 @@ export class ZarrMapService {
       this.layerMeta.update((prev) => ({ ...prev, [definition.id]: meta }));
       this.metaFallback.update((prev) => ({ ...prev, [definition.id]: false }));
       const managed = this.managedLayers.get(definition.id);
-      if (managed?.ready) {
+      if (managed?.ready && definition.id !== 'temperature') {
         managed.layer.setClim([meta.p5, meta.p95]);
       }
     } catch {
@@ -476,7 +521,7 @@ export class ZarrMapService {
       if (!map.getSource(OVERVIEW_SOURCE_ID)) {
         map.addSource(OVERVIEW_SOURCE_ID, {
           type: 'image',
-          url: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+          url: TRANSPARENT_PIXEL_DATA_URL,
           coordinates: [
             [8.2, 47.5],
             [8.8, 47.5],
@@ -492,7 +537,7 @@ export class ZarrMapService {
           source: OVERVIEW_SOURCE_ID,
           paint: {
             'raster-opacity': this.overviewOpacity() / 100,
-            'raster-resampling': 'nearest',
+            'raster-resampling': 'linear',
             'raster-fade-duration': 0,
           },
         });
@@ -557,6 +602,49 @@ export class ZarrMapService {
     }
 
     const preferences = this.layerPreferences();
+
+    if (isTemperaturePriorityMode(preferences)) {
+      this.compositeAbort?.abort();
+      if (this.compositeDebounce) {
+        clearTimeout(this.compositeDebounce);
+        this.compositeDebounce = null;
+      }
+      if (this.rescoreDebounce) {
+        clearTimeout(this.rescoreDebounce);
+        this.rescoreDebounce = null;
+      }
+      this.pendingCompositeExtentKey = null;
+      this.pendingOverviewFullCells = 0;
+      this.overviewLoading.set(false);
+
+      for (const { definition, layer, ready } of this.managedLayers.values()) {
+        if (!this.map.getLayer(layer.id)) {
+          continue;
+        }
+        const preference = preferences[definition.id];
+        const baseOpacity = definition.renderOpacity ?? SINGLE_LAYER_OPACITY;
+        const showTemperature = definition.id === 'temperature' && ready;
+        layer.setOpacity(showTemperature ? singleLayerOpacityFromImportance(baseOpacity, preference) : 0);
+      }
+
+      if (this.map.getLayer(OVERVIEW_MAP_LAYER_ID)) {
+        this.map.setLayoutProperty(OVERVIEW_MAP_LAYER_ID, 'visibility', 'none');
+        this.map.setPaintProperty(OVERVIEW_MAP_LAYER_ID, 'raster-opacity', 0);
+      }
+
+      const overviewSource = this.map.getSource(OVERVIEW_SOURCE_ID) as ImageSource | undefined;
+      const extent = overviewExtentForMap(this.map);
+      if (overviewSource && extent) {
+        overviewSource.updateImage({
+          url: TRANSPARENT_PIXEL_DATA_URL,
+          coordinates: cellExtentToImageCoordinates(extent),
+        });
+      }
+
+      this.map.triggerRepaint();
+      return;
+    }
+
     const displayPlan = computeLayerDisplayPlan(
       preferences,
       [...this.managedLayers.values()].map((managed) => ({
@@ -566,14 +654,24 @@ export class ZarrMapService {
       })),
     );
 
-    for (const { definition, layer } of this.managedLayers.values()) {
+    for (const { definition, layer, ready } of this.managedLayers.values()) {
       if (!this.map.getLayer(layer.id)) {
         continue;
       }
-      const showSingle = displayPlan.visibleLayerIds.includes(definition.id);
       const preference = preferences[definition.id];
+      const showSingle = displayPlan.visibleLayerIds.includes(definition.id);
+      // Layers excluded from overview (e.g. temperature) stay as standalone rasters.
+      const showStandaloneExcluded = shouldRenderStandaloneExcludedLayer(
+        definition,
+        preference,
+        ready,
+      );
       const baseOpacity = definition.renderOpacity ?? SINGLE_LAYER_OPACITY;
-      layer.setOpacity(showSingle ? singleLayerOpacityFromImportance(baseOpacity, preference) : 0);
+      layer.setOpacity(
+        showSingle || showStandaloneExcluded
+          ? singleLayerOpacityFromImportance(baseOpacity, preference)
+          : 0,
+      );
     }
 
     if (this.map.getLayer(OVERVIEW_MAP_LAYER_ID)) {
@@ -651,7 +749,6 @@ export class ZarrMapService {
       return;
     }
 
-    const bounds = this.map.getBounds();
     const extent = overviewExtentForMap(this.map);
     if (!extent || extentCacheKey(extent) !== this.lastExtentKey) {
       if (this.overviewLoading()) {
@@ -676,6 +773,7 @@ export class ZarrMapService {
     }
 
     const plan = resolveOverviewLod(this.map.getZoom(), extent.fullNx, extent.fullNy);
+    const queryBounds = overviewQueryBoundsForExtent(extent);
     const sources = this.buildSources(plan);
 
     const missing = sources.filter((s) => {
@@ -698,10 +796,10 @@ export class ZarrMapService {
           sources: missing,
           preferences,
           metaByLayerId: this.layerMeta(),
-          west: bounds.getWest(),
-          south: bounds.getSouth(),
-          east: bounds.getEast(),
-          north: bounds.getNorth(),
+          west: queryBounds.west,
+          south: queryBounds.south,
+          east: queryBounds.east,
+          north: queryBounds.north,
           zoom: this.map.getZoom(),
           plan,
           rawCache: this.rawCache,
@@ -739,17 +837,13 @@ export class ZarrMapService {
       return;
     }
 
-    const bounds = this.map.getBounds();
-    const west = bounds.getWest();
-    const east = bounds.getEast();
-    const south = bounds.getSouth();
-    const north = bounds.getNorth();
     const zoom = this.map.getZoom();
 
     const extent = overviewExtentForMap(this.map);
     if (!extent) {
       return;
     }
+    const queryBounds = overviewQueryBoundsForExtent(extent);
 
     this.pendingOverviewFullCells = extent.fullNx * extent.fullNy;
 
@@ -793,10 +887,10 @@ export class ZarrMapService {
           sources,
           preferences,
           metaByLayerId: this.layerMeta(),
-          west,
-          south,
-          east,
-          north,
+          west: queryBounds.west,
+          south: queryBounds.south,
+          east: queryBounds.east,
+          north: queryBounds.north,
           zoom,
           plan,
           rawCache: this.rawCache,
@@ -884,8 +978,7 @@ export class ZarrMapService {
     if (!composite) {
       source.updateImage({
         url:
-          this.overviewDataUrl ??
-          'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+          this.overviewDataUrl ?? TRANSPARENT_PIXEL_DATA_URL,
         coordinates,
       });
       this.map.triggerRepaint();

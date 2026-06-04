@@ -202,40 +202,42 @@
                   {{ 'sidebar.resetLayer' | translate }}
                 </button>
 
-                <button
-                  type="button"
-                  class="layer-advanced-toggle"
-                  [disabled]="!layer.enabled"
-                  [attr.aria-expanded]="isLayerAdvancedOpen(layer.id)"
-                  (click)="toggleLayerAdvanced(layer.id, $event)"
-                >
-                  {{
-                    isLayerAdvancedOpen(layer.id)
-                      ? ('sidebar.hideLayerAdvanced' | translate)
-                      : ('sidebar.showLayerAdvanced' | translate)
-                  }}
-                </button>
+                @if (shouldShowAdvancedControls(layer.id)) {
+                  <button
+                    type="button"
+                    class="layer-advanced-toggle"
+                    [disabled]="!layer.enabled"
+                    [attr.aria-expanded]="isLayerAdvancedOpen(layer.id)"
+                    (click)="toggleLayerAdvanced(layer.id, $event)"
+                  >
+                    {{
+                      isLayerAdvancedOpen(layer.id)
+                        ? ('sidebar.hideLayerAdvanced' | translate)
+                        : ('sidebar.showLayerAdvanced' | translate)
+                    }}
+                  </button>
 
-                @if (isLayerAdvancedOpen(layer.id)) {
-                  <div class="layer-advanced-panel">
-                    <label class="dealbreaker-toggle">
-                      <input
-                        type="checkbox"
-                        [checked]="isDealbreaker(layer.id)"
+                  @if (isLayerAdvancedOpen(layer.id)) {
+                    <div class="layer-advanced-panel">
+                      <label class="dealbreaker-toggle">
+                        <input
+                          type="checkbox"
+                          [checked]="isDealbreaker(layer.id)"
+                          [disabled]="!layer.enabled"
+                          (change)="onDealbreakerChange(layer.id, $event)"
+                        />
+                        <span>{{ 'sidebar.dealbreaker' | translate }}</span>
+                      </label>
+                      <app-trapezoid-preference-editor
+                        [preference]="layer.preference"
+                        [bounds]="normalizationBounds(layer.id)"
                         [disabled]="!layer.enabled"
-                        (change)="onDealbreakerChange(layer.id, $event)"
+                        [formatRaw]="def.formatValue"
+                        [unit]="metricUnit(def)"
+                        (preferenceChange)="onPreferenceChange(layer.id, $event)"
                       />
-                      <span>{{ 'sidebar.dealbreaker' | translate }}</span>
-                    </label>
-                    <app-trapezoid-preference-editor
-                      [preference]="layer.preference"
-                      [bounds]="normalizationBounds(layer.id)"
-                      [disabled]="!layer.enabled"
-                      [formatRaw]="def.formatValue"
-                      [unit]="metricUnit(def)"
-                      (preferenceChange)="onPreferenceChange(layer.id, $event)"
-                    />
-                  </div>
+                    </div>
+                  }
                 }
               }
 
@@ -318,40 +320,42 @@
                       {{ 'sidebar.resetLayer' | translate }}
                     </button>
 
-                    <button
-                      type="button"
-                      class="layer-advanced-toggle"
-                      [disabled]="!layer.enabled"
-                      [attr.aria-expanded]="isLayerAdvancedOpen(layer.id)"
-                      (click)="toggleLayerAdvanced(layer.id, $event)"
-                    >
-                      {{
-                        isLayerAdvancedOpen(layer.id)
-                          ? ('sidebar.hideLayerAdvanced' | translate)
-                          : ('sidebar.showLayerAdvanced' | translate)
-                      }}
-                    </button>
+                    @if (shouldShowAdvancedControls(layer.id)) {
+                      <button
+                        type="button"
+                        class="layer-advanced-toggle"
+                        [disabled]="!layer.enabled"
+                        [attr.aria-expanded]="isLayerAdvancedOpen(layer.id)"
+                        (click)="toggleLayerAdvanced(layer.id, $event)"
+                      >
+                        {{
+                          isLayerAdvancedOpen(layer.id)
+                            ? ('sidebar.hideLayerAdvanced' | translate)
+                            : ('sidebar.showLayerAdvanced' | translate)
+                        }}
+                      </button>
 
-                    @if (isLayerAdvancedOpen(layer.id)) {
-                      <div class="layer-advanced-panel">
-                        <label class="dealbreaker-toggle">
-                          <input
-                            type="checkbox"
-                            [checked]="isDealbreaker(layer.id)"
+                      @if (isLayerAdvancedOpen(layer.id)) {
+                        <div class="layer-advanced-panel">
+                          <label class="dealbreaker-toggle">
+                            <input
+                              type="checkbox"
+                              [checked]="isDealbreaker(layer.id)"
+                              [disabled]="!layer.enabled"
+                              (change)="onDealbreakerChange(layer.id, $event)"
+                            />
+                            <span>{{ 'sidebar.dealbreaker' | translate }}</span>
+                          </label>
+                          <app-trapezoid-preference-editor
+                            [preference]="layer.preference"
+                            [bounds]="normalizationBounds(layer.id)"
                             [disabled]="!layer.enabled"
-                            (change)="onDealbreakerChange(layer.id, $event)"
+                            [formatRaw]="def.formatValue"
+                            [unit]="metricUnit(def)"
+                            (preferenceChange)="onPreferenceChange(layer.id, $event)"
                           />
-                          <span>{{ 'sidebar.dealbreaker' | translate }}</span>
-                        </label>
-                        <app-trapezoid-preference-editor
-                          [preference]="layer.preference"
-                          [bounds]="normalizationBounds(layer.id)"
-                          [disabled]="!layer.enabled"
-                          [formatRaw]="def.formatValue"
-                          [unit]="metricUnit(def)"
-                          (preferenceChange)="onPreferenceChange(layer.id, $event)"
-                        />
-                      </div>
+                        </div>
+                      }
                     }
                   }
 

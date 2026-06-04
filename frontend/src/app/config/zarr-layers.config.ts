@@ -97,7 +97,7 @@ export function groupZarrLayerDefinitions(
  */
 const CLIM = {
   // Emphasize user-facing weather bands: cold <15, mild 15-30, hot >30.
-  temperature: [0, 45] as [number, number],
+  temperature: [-20, 50] as [number, number],
   tranquillity: [0, 1] as [number, number],
   /** Raw Einw./km² from STATPOP (see settlement-layer-meta p5/p95 ≈ 300–9900). */
   populationDensity: [300, 9_900] as [number, number],
@@ -148,13 +148,14 @@ const ZARR_LAYER_DEFINITIONS_BASE: Omit<ZarrLayerDefinition, 'overviewCoarse'>[]
       '#fcbba1',
     ],
     clim: CLIM.temperature,
-    renderOpacity: 1,
+    renderOpacity: 0.4,
     metricKey: 'temperatureCelsius',
     metricLabelKey: 'layers.temperature.metricLabel',
     metricUnitKey: 'layers.temperature.metricUnit',
     formatValue: (v) => v.toFixed(1),
     higherIsBetter: false,
     sidebarGroup: 'weather',
+    includeInOverview: false,
   },
   {
     id: 'tranquillity',

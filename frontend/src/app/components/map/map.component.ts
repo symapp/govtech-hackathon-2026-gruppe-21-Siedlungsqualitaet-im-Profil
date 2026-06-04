@@ -116,7 +116,7 @@ export class MapComponent implements OnInit, OnDestroy {
     const lng = activeRegion?.lng ?? 7.46274;
     this.locationService.setViewCenter(lat, lng);
 
-    this.map = new Map({
+    const mapOptions = {
       container: this.mapContainer.nativeElement,
       style: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
       center: [lng, lat],
@@ -127,8 +127,11 @@ export class MapComponent implements OnInit, OnDestroy {
       touchPitch: false,
       pitchWithRotate: false,
       maxBounds: SWITZERLAND_MAX_BOUNDS,
+      antialias: true,
       canvasContextAttributes: { preserveDrawingBuffer: true },
-    });
+    } as any;
+
+    this.map = new Map(mapOptions);
 
     this.map.addControl(
       new NavigationControl({ showCompass: true, showZoom: true, visualizePitch: false }),

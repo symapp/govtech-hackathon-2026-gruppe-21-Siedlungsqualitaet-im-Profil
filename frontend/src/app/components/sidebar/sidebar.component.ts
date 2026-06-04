@@ -222,4 +222,8 @@ export class SidebarComponent implements OnInit {
       [layerId]: !current[layerId],
     }));
   }
+
+  shouldShowAdvancedControls(layerId: string): boolean {
+    return layerId !== 'temperature';
+  }
 }

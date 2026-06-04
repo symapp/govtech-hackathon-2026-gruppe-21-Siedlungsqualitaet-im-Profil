@@ -3,12 +3,13 @@ import subprocess
 import sys
 from pathlib import Path
 
-# (script, pipeline args, accepts_percentile_cutoff) — shared SWISS_GRID_100M_EDGE_BOUNDS
-PIPELINES: list[tuple[str, list[str], bool]] = [
-    ("tranquillity-rasterize.py", [], True),
-    ("density-rasterize.py", [], True),
-    ("rasterize-are-metrics.py", ["all"], False),
-    ("tlm-green-trees-rasterize.py", [], False),
+# (script, pipeline args, accepts_percentile_cutoff, accepts_force)
+PIPELINES: list[tuple[str, list[str], bool, bool]] = [
+    ("tranquillity-rasterize.py", [], True, True),
+    ("density-rasterize.py", [], True, True),
+    ("rasterize-are-metrics.py", ["all"], False, True),
+    ("tlm-green-trees-rasterize.py", [], False, True),
+    ("meteo-fetch.py", [], False, False),
 ]
 
 
@@ -35,10 +36,8 @@ def main() -> None:
     common_flags: list[str] = []
     if args.upload:
         common_flags.append("--upload")
-    if args.force:
-        common_flags.append("--force")
 
-    for pipeline, pipeline_args, accepts_percentile in PIPELINES:
+    for pipeline, pipeline_args, accepts_percentile, accepts_force in PIPELINES:
         pipeline_path = base_path / pipeline
         if not pipeline_path.exists():
             print(f"Error: Pipeline script {pipeline} not found in {base_path}")
@@ -49,6 +48,8 @@ def main() -> None:
         print(f"{'=' * 60}\n")
 
         extra_flags = list(common_flags)
+        if args.force and accepts_force:
+            extra_flags.append("--force")
         if accepts_percentile:
             extra_flags.extend(["--percentile-cutoff", str(args.percentile_cutoff)])
 

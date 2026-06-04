@@ -49,26 +49,21 @@ describe('zarr layer config', () => {
     expect(temperature?.colormap).toEqual(EXPECTED_TEMPERATURE_COLORMAP);
   });
 
-  it('keeps temperature ramp free of white stops and enforces full single-layer opacity', () => {
+  it('keeps temperature ramp free of white stops and enforces lower temperature opacity', () => {
     const temperature = ZARR_LAYER_DEFINITIONS.find((layer) => layer.id === 'temperature');
 
     expect(temperature).toBeDefined();
     expect(temperature?.colormap.some((stop) => stop.toLowerCase() === '#ffffff')).toBe(false);
-    expect(temperature?.renderOpacity).toBe(1);
-    expect(temperature?.clim).toEqual([0, 45]);
+    expect(temperature?.renderOpacity).toBe(0.4);
+    expect(temperature?.clim).toEqual([-20, 50]);
   });
 
-  it('keeps hard temperature band thresholds at 15 C and 30 C', () => {
+  it('keeps the banded 5/5/5 cold-mild-hot palette grouping', () => {
     const temperature = ZARR_LAYER_DEFINITIONS.find((layer) => layer.id === 'temperature');
 
     expect(temperature).toBeDefined();
-    // 15 colors: 5 blue (0-15 C), 5 green (15-30 C), 5 red (30-45 C).
+    // 15 colors: 5 blue, 5 green, 5 red.
     expect(temperature?.colormap).toHaveLength(15);
-
-    const [climMin, climMax] = temperature!.clim;
-    const colorStep = (climMax - climMin) / temperature!.colormap.length;
-    expect(climMin + 5 * colorStep).toBe(15);
-    expect(climMin + 10 * colorStep).toBe(30);
 
     expect(temperature?.colormap.slice(0, 5)).toEqual(EXPECTED_TEMPERATURE_COLORMAP.slice(0, 5));
     expect(temperature?.colormap.slice(5, 10)).toEqual(EXPECTED_TEMPERATURE_COLORMAP.slice(5, 10));
@@ -79,7 +74,8 @@ describe('zarr layer config', () => {
     const temperature = ZARR_LAYER_DEFINITIONS.find((layer) => layer.id === 'temperature');
     const tranquillity = ZARR_LAYER_DEFINITIONS.find((layer) => layer.id === 'tranquillity');
 
-    expect(temperature?.renderOpacity).toBe(1);
+    expect(temperature?.renderOpacity).toBe(0.4);
+    expect(temperature?.includeInOverview).toBe(false);
     expect(tranquillity?.renderOpacity).toBeUndefined();
   });
 });

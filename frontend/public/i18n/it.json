@@ -26,6 +26,8 @@
     "overviewMapScale": "Mappa: 0 – 100 (peggiore – migliore)",
     "layersTitle": "Fattori e preferenze",
     "layersHint": "Curva trapezoidale per fattore: plateau = 100 punti. L'importanza guida il punteggio complessivo e la mappa di sintesi.",
+    "weatherTitle": "Meteo / Weather",
+    "weatherHint": "La temperatura è mostrata in una sezione separata.",
     "importance": "Importanza",
     "resetDefaults": "Valori predefiniti",
     "resetLayer": "Reimposta fattore",
@@ -129,12 +131,6 @@
       "metricLabel": "Densità di popolazione",
       "metricUnit": "ab./km²"
     },
-    "vacancyRates": {
-      "label": "Tasso di alloggi sfitti",
-      "description": "Indicatore UST del tasso di vacanza per comune (2025, griglia 100 m)",
-      "metricLabel": "Tasso di vacanza",
-      "metricUnit": "%"
-    },
     "ptAccessibility": {
       "label": "Accessibilità TP",
       "description": "Valore di accessibilità TP ARE (EW, più alto = meglio servito)",
@@ -216,6 +212,12 @@
         "label": "Ospedale",
         "metricUnit": "numero"
       }
+    },
+    "temperature": {
+      "label": "Temperatura",
+      "description": "Temperatura attuale dell'aria a 2 m",
+      "metricLabel": "Temperatura",
+      "metricUnit": "°C"
     }
   },
   "languageSelector": {
@@ -251,6 +253,9 @@
     "factorsLoading": "Caricamento valori…",
     "factorsEmpty": "Nessun fattore selezionato — attivare i fattori nel pannello a destra.",
     "factorsRadarMin": "Selezionare almeno tre fattori per il diagramma radar.",
-    "factorsOverview": "Punteggio complessivo"
+    "factorsOverview": "Punteggio complessivo",
+    "temperatureLabel": "Temperatura media",
+    "temperatureLoading": "Calcolo in corso…",
+    "temperatureUnavailable": "Nessun dato"
   }
 }

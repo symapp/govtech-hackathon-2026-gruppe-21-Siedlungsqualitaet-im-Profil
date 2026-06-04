@@ -163,35 +163,30 @@ test.describe('Weather layers — data sampling (requires uploaded Zarr stores)'
         { timeout: 90_000 },
       )
       .toBe(true);
+
+    const temperatureCard = page
+      .locator('.weather-section .map-layer-card')
+      .filter({ has: page.locator('.map-layer-title', { hasText: /Tempe?r(atur|ature)/i }) });
+    await expect(temperatureCard).not.toHaveClass(/loading/, { timeout: 90_000 });
   });
 
-  test('temperature at Bern center is within Swiss range or null (no data)', async ({ page }) => {
+  test('temperature at Bern center is available and within configured range', async ({ page }) => {
     const value = await sampleZarr(page, BERN_CENTER.lng, BERN_CENTER.lat, 'temperature');
 
-    if (value === null) {
-      // Meteo Zarr not yet uploaded — acceptable in test / staging environments.
-      console.log('[weather-e2e] temperature Zarr not available, skipping range check');
-      return;
-    }
-
-    // Swiss air temperature at 2 m: plausible range −25 °C … +40 °C.
-    expect(value).toBeGreaterThan(-25);
-    expect(value).toBeLessThan(40);
+    expect(value).not.toBeNull();
+    expect(value!).toBeGreaterThanOrEqual(-20);
+    expect(value!).toBeLessThanOrEqual(50);
   });
 
-  test('temperature on open lake surface is null or same range (no settlement cell required)', async ({
+  test('temperature on open lake surface is available and within configured range', async ({
     page,
   }) => {
     // Unlike population-density, weather is a continuous field — lake is still valid.
     const value = await sampleZarr(page, LAKE_NEUCHATEL.lng, LAKE_NEUCHATEL.lat, 'temperature');
 
-    if (value === null) {
-      console.log('[weather-e2e] temperature Zarr not available for lake check');
-      return;
-    }
-
-    expect(value).toBeGreaterThan(-25);
-    expect(value).toBeLessThan(40);
+    expect(value).not.toBeNull();
+    expect(value!).toBeGreaterThanOrEqual(-20);
+    expect(value!).toBeLessThanOrEqual(50);
   });
 
 });

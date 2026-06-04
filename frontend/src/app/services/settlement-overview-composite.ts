@@ -19,6 +19,7 @@ import { OverviewRawCache } from './overview-raw-cache';
 import { queryOverviewCellMap, type OverviewQueryContext } from './overview-cell-query';
 
 const PARALLEL_LAYER_FETCHES = 3;
+const OVERVIEW_CANVAS_SCALE = 2;
 
 export interface OverviewCompositeSource {
   definition: ZarrLayerDefinition;
@@ -74,6 +75,53 @@ function scoreToRgb(score: number): [number, number, number, number] {
     Math.round(c0[2] + (c1[2] - c0[2]) * f),
     220,
   ];
+}
+
+function smoothOverviewCanvas(sourceCanvas: HTMLCanvasElement): HTMLCanvasElement {
+  if (OVERVIEW_CANVAS_SCALE <= 1) {
+    return sourceCanvas;
+  }
+
+  const blurredCanvas = document.createElement('canvas');
+  blurredCanvas.width = sourceCanvas.width;
+  blurredCanvas.height = sourceCanvas.height;
+
+  const blurredCtx = blurredCanvas.getContext('2d', { alpha: true });
+  if (!blurredCtx) {
+    return sourceCanvas;
+  }
+
+  blurredCtx.imageSmoothingEnabled = true;
+  blurredCtx.imageSmoothingQuality = 'medium';
+  const filter = 'blur(0.9px)';
+  try {
+    blurredCtx.filter = filter;
+    if (blurredCtx.filter !== filter) {
+      return sourceCanvas;
+    }
+    blurredCtx.clearRect(0, 0, blurredCanvas.width, blurredCanvas.height);
+    blurredCtx.drawImage(sourceCanvas, 0, 0);
+  } catch {
+    return sourceCanvas;
+  } finally {
+    blurredCtx.filter = 'none';
+  }
+
+  const outputCanvas = document.createElement('canvas');
+  outputCanvas.width = blurredCanvas.width * OVERVIEW_CANVAS_SCALE;
+  outputCanvas.height = blurredCanvas.height * OVERVIEW_CANVAS_SCALE;
+
+  const outputCtx = outputCanvas.getContext('2d', { alpha: true });
+  if (!outputCtx) {
+    return sourceCanvas;
+  }
+
+  outputCtx.imageSmoothingEnabled = true;
+  outputCtx.imageSmoothingQuality = 'medium';
+  outputCtx.clearRect(0, 0, outputCanvas.width, outputCanvas.height);
+  outputCtx.drawImage(blurredCanvas, 0, 0, outputCanvas.width, outputCanvas.height);
+
+  return outputCanvas;
 }
 
 /** Parse region query (proj4 LV95 x/y coords) into hectare cell map. */
@@ -313,7 +361,7 @@ export function scoreOverviewComposite(
   ctx.putImageData(imageData, 0, 0);
 
   return {
-    canvas,
+    canvas: smoothOverviewCanvas(canvas),
     coordinates: cellExtentToImageCoordinates(extent),
     extent,
   };

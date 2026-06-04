@@ -30,26 +30,21 @@ export class MeteoRefreshService {
   }
 
   private poll(): void {
-    this.http
-      .get<MeteoManifest>(MANIFEST_URL, { headers: { 'Cache-Control': 'no-cache' } })
-      .subscribe({
-        next: (manifest) => {
-          const isFirstPoll = this.knownTimestamp === null;
-          const isNewer =
-            this.knownTimestamp === null || manifest.last_updated > this.knownTimestamp;
-          if (isNewer) {
-            this.knownTimestamp = manifest.last_updated;
-            this.lastUpdated.set(manifest.last_updated);
-            this.zarrMap.refreshMeteoLayers(manifest, !isFirstPoll);
-            if (!isFirstPoll) {
-              console.log(
-                `[meteo] New data detected (${manifest.last_updated}), refreshing layers.`,
-              );
-            }
+    this.http.get<MeteoManifest>(MANIFEST_URL).subscribe({
+      next: (manifest) => {
+        const isFirstPoll = this.knownTimestamp === null;
+        const isNewer = this.knownTimestamp === null || manifest.last_updated > this.knownTimestamp;
+        if (isNewer) {
+          this.knownTimestamp = manifest.last_updated;
+          this.lastUpdated.set(manifest.last_updated);
+          this.zarrMap.refreshMeteoLayers(manifest, !isFirstPoll);
+          if (!isFirstPoll) {
+            console.log(`[meteo] New data detected (${manifest.last_updated}), refreshing layers.`);
           }
-        },
-        error: (err) =>
-          console.warn('[meteo] Manifest poll failed (data may not be uploaded yet):', err),
-      });
+        }
+      },
+      error: (err) =>
+        console.warn('[meteo] Manifest poll failed (data may not be uploaded yet):', err),
+    });
   }
 }

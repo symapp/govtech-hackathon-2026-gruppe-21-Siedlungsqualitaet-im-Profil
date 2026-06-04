@@ -25,6 +25,12 @@ import { EMPTY_LOCATION_METRICS, type LocationMetrics } from '../models/metrics.
 import { clampLayerPreference } from '../utils/preference-scoring.util';
 import { computePreferenceOverview } from '../utils/metrics-aggregate.util';
 import { overviewCompositeDebounceMs, resolveOverviewLod } from '../utils/overview-lod.util';
+import {
+  computeLayerDisplayPlan,
+  isOverviewEligible,
+  singleLayerOpacityFromImportance,
+  singleLayerOpacityFromSlider,
+} from '../utils/zarr-map-display.util';
 import { SWITZERLAND_BBOX } from '../config/map-bounds.config';
 import { cellExtentToImageCoordinates, viewportCellExtent } from '../utils/swiss-grid.util';
 import type { ViewportCellExtent } from '../utils/swiss-grid.util';
@@ -80,64 +86,6 @@ interface ManagedZarrLayer {
   ready: boolean;
   loading: boolean;
 }
-
-export interface ManagedLayerDisplayState {
-  id: string;
-  ready: boolean;
-  includeInOverview: boolean;
-}
-
-interface LayerDisplayPlan {
-  hasOverview: boolean;
-  visibleLayerIds: string[];
-}
-
-export function computeLayerDisplayPlan(
-  preferences: Record<string, LayerPreference>,
-  managedStates: readonly ManagedLayerDisplayState[],
-): LayerDisplayPlan {
-  const temperaturePref = preferences['temperature'];
-  const showTemperatureStandalone =
-    !!temperaturePref?.enabled && temperaturePref.importance > 0;
-
-  // Temperature must render from its own Zarr layer to avoid overview tile artifacts.
-  if (showTemperatureStandalone) {
-    return {
-      hasOverview: false,
-      visibleLayerIds: ['temperature'],
-    };
-  }
-
-  const activeReadyLayerIds = managedStates
-    .filter((state) => {
-      const pref = preferences[state.id];
-      return !!pref?.enabled && pref.importance > 0 && state.ready && state.includeInOverview;
-    })
-    .map((state) => state.id);
-
-  if (activeReadyLayerIds.length === 1) {
-    return {
-      hasOverview: false,
-      visibleLayerIds: activeReadyLayerIds,
-    };
-  }
-
-  if (activeReadyLayerIds.length > 1) {
-    return {
-      hasOverview: true,
-      visibleLayerIds: [],
-    };
-  }
-
-  return {
-    hasOverview: false,
-    visibleLayerIds: [],
-  };
-}
-function isOverviewEligible(definition: ZarrLayerDefinition): boolean {
-  return definition.includeInOverview !== false;
-}
-
 export interface ZarrLayerState {
   id: string;
   labelKey: string;
@@ -157,40 +105,11 @@ const TRANSPARENT_PIXEL_DATA_URL =
   'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
 const SINGLE_LAYER_OPACITY = 0.82;
 const WEATHER_LAYER_IDS = new Set(['temperature']);
-const STANDALONE_EXCLUDED_LAYER_IDS = new Set(['temperature']);
 
 function isTemperaturePriorityMode(preferences: Record<string, LayerPreference>): boolean {
   const temperaturePref = preferences['temperature'];
   return !!temperaturePref?.enabled && temperaturePref.importance > 0;
 }
-
-export function singleLayerOpacityFromImportance(
-  baseOpacity: number,
-  preference: LayerPreference | undefined,
-): number {
-  if (!preference?.enabled || preference.importance <= 0) {
-    return 0;
-  }
-  const clampedBaseOpacity = Math.min(1, Math.max(0, baseOpacity));
-  const clampedImportance = Math.min(100, Math.max(0, preference.importance));
-  const importanceFactor = clampedImportance / 100;
-  return clampedBaseOpacity * importanceFactor;
-}
-
-export function shouldRenderStandaloneExcludedLayer(
-  definition: Pick<ZarrLayerDefinition, 'id' | 'includeInOverview'>,
-  preference: LayerPreference | undefined,
-  ready: boolean,
-): boolean {
-  return (
-    definition.includeInOverview === false &&
-    STANDALONE_EXCLUDED_LAYER_IDS.has(definition.id) &&
-    !!preference?.enabled &&
-    preference.importance > 0 &&
-    ready
-  );
-}
-
 @Injectable({
   providedIn: 'root',
 })
@@ -288,7 +207,10 @@ export class ZarrMapService {
         this.map.removeLayer(weatherLayerId);
       }
 
-      const layer = this.createZarrLayer(managed.definition, this.cacheTokenForLayer(weatherLayerId));
+      const layer = this.createZarrLayer(
+        managed.definition,
+        this.cacheTokenForLayer(weatherLayerId),
+      );
       managed.layer = layer;
       managed.loading = true;
       managed.ready = false;
@@ -472,7 +394,10 @@ export class ZarrMapService {
     }
   }
 
-  private async fetchLayerMeta(definition: ZarrLayerDefinition, cacheToken?: string | null): Promise<void> {
+  private async fetchLayerMeta(
+    definition: ZarrLayerDefinition,
+    cacheToken?: string | null,
+  ): Promise<void> {
     if (!environment.settlementLayerMetaAvailable) {
       this.layerMeta.update((prev) => ({ ...prev, [definition.id]: null }));
       this.metaFallback.update((prev) => ({ ...prev, [definition.id]: true }));
@@ -560,7 +485,7 @@ export class ZarrMapService {
       source: addCacheToken(definition.storePath, cacheToken),
       variable: definition.variable,
       selector: definition.selector,
-      // Let @carbonplan/zarr-layer derive LV95 extent from x/y cell-center coordinates (± half cell).
+      bounds: definition.bounds,
       fillValue: definition.fillValue,
       colormap: definition.colormap,
       clim: definition.clim,
@@ -660,18 +585,11 @@ export class ZarrMapService {
       }
       const preference = preferences[definition.id];
       const showSingle = displayPlan.visibleLayerIds.includes(definition.id);
-      // Layers excluded from overview (e.g. temperature) stay as standalone rasters.
-      const showStandaloneExcluded = shouldRenderStandaloneExcludedLayer(
-        definition,
-        preference,
-        ready,
-      );
       const baseOpacity = definition.renderOpacity ?? SINGLE_LAYER_OPACITY;
-      layer.setOpacity(
-        showSingle || showStandaloneExcluded
-          ? singleLayerOpacityFromImportance(baseOpacity, preference)
-          : 0,
-      );
+      const layerOpacity = showSingle
+        ? singleLayerOpacityFromSlider(baseOpacity, preference, this.overviewOpacity() / 100)
+        : 0;
+      layer.setOpacity(layerOpacity);
     }
 
     if (this.map.getLayer(OVERVIEW_MAP_LAYER_ID)) {
@@ -732,7 +650,7 @@ export class ZarrMapService {
 
   private buildSources(plan: ReturnType<typeof resolveOverviewLod>) {
     return [...this.managedLayers.values()]
-      .filter(({ definition }) => isOverviewEligible(definition))
+      .filter(({ definition }) => isOverviewEligible(definition.includeInOverview))
       .map(({ definition, layer, ready }) => ({
         definition,
         ready,

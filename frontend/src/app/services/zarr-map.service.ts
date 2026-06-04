@@ -485,7 +485,6 @@ export class ZarrMapService {
       source: addCacheToken(definition.storePath, cacheToken),
       variable: definition.variable,
       selector: definition.selector,
-      bounds: definition.bounds,
       fillValue: definition.fillValue,
       colormap: definition.colormap,
       clim: definition.clim,
@@ -504,6 +503,12 @@ export class ZarrMapService {
         }
       },
     };
+
+    // Meteo temperature renders correctly when the extent is derived from x/y
+    // coordinates in the GeoZarr metadata (pre-merge behavior).
+    if (definition.id !== 'temperature') {
+      layerOptions.bounds = definition.bounds;
+    }
 
     if (definition.fillValue !== undefined) {
       layerOptions.fillValue = definition.fillValue;
@@ -560,6 +565,10 @@ export class ZarrMapService {
       const overviewSource = this.map.getSource(OVERVIEW_SOURCE_ID) as ImageSource | undefined;
       const extent = overviewExtentForMap(this.map);
       if (overviewSource && extent) {
+        if (this.overviewDataUrl) {
+          URL.revokeObjectURL(this.overviewDataUrl);
+          this.overviewDataUrl = null;
+        }
         overviewSource.updateImage({
           url: TRANSPARENT_PIXEL_DATA_URL,
           coordinates: cellExtentToImageCoordinates(extent),
@@ -895,8 +904,7 @@ export class ZarrMapService {
 
     if (!composite) {
       source.updateImage({
-        url:
-          this.overviewDataUrl ?? TRANSPARENT_PIXEL_DATA_URL,
+        url: TRANSPARENT_PIXEL_DATA_URL,
         coordinates,
       });
       this.map.triggerRepaint();

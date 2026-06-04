@@ -1,7 +1,6 @@
 export const environment = {
-  // Temporary rollback to B2 because the new host corrupted .zarr files by uploading in ASCII transfer mode (stripping 0x0D bytes).
-  // Once the files on share.unidesign.ch are re-uploaded in BINARY mode, switch back to: 'https://share.unidesign.ch/govtech'
-  zarrBaseUrl: 'https://share.unidesign.ch/govtech',
+  // Use the validated B2 bucket until share.unidesign.ch stores are re-uploaded in binary mode.
+  zarrBaseUrl: 'https://egov-hackathon.s3.eu-central-003.backblazeb2.com',
   /** Set true after uploading *_500m.zarr and *_1000m.zarr from coarsen_settlement_layers.py */
   overviewCoarseAvailable: false,
   /**

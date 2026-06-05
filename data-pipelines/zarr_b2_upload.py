@@ -49,7 +49,7 @@ def create_s3_filesystem():
     """S3-compatible filesystem for local MinIO."""
     if not credentials_configured():
         raise RuntimeError(
-            "B2 credentials missing. Set B2_KEY_ID and B2_APPLICATION_KEY."
+            "S3 credentials missing. Set B2_KEY_ID/B2_APPLICATION_KEY or MINIO_ROOT_USER/MINIO_ROOT_PASSWORD."
         )
 
     import s3fs
@@ -126,10 +126,10 @@ def discover_zarr_stores_s3(
 
 
 def upload_zarr(local_path: Path | str, remote_name: str | None = None) -> str:
-    """Upload a local Zarr directory to B2. Returns the remote s3:// path."""
+    """Upload a local Zarr directory to S3-compatible storage. Returns the remote s3:// path."""
     if not credentials_configured():
         raise RuntimeError(
-            "B2 credentials missing. Set B2_KEY_ID and B2_APPLICATION_KEY."
+            "S3 credentials missing. Set B2_KEY_ID/B2_APPLICATION_KEY or MINIO_ROOT_USER/MINIO_ROOT_PASSWORD."
         )
 
     local = Path(local_path)

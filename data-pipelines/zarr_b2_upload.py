@@ -16,14 +16,12 @@ for _env_path in (_REPO_ROOT / ".env", Path(__file__).resolve().parent / ".env")
 else:
     load_dotenv()
 
-B2_KEY_ID = (
+S3_ACCESS_KEY_ID = (
     os.getenv("B2_KEY_ID")
-    or os.getenv("AWS_ACCESS_KEY_ID")
     or os.getenv("MINIO_ROOT_USER")
 )
-B2_APPLICATION_KEY = (
+S3_SECRET_ACCESS_KEY = (
     os.getenv("B2_APPLICATION_KEY")
-    or os.getenv("AWS_SECRET_ACCESS_KEY")
     or os.getenv("MINIO_ROOT_PASSWORD")
 )
 ENDPOINT_URL = (
@@ -44,7 +42,7 @@ UPLOAD_RETRIES = int(os.getenv("B2_UPLOAD_RETRIES", "4"))
 
 
 def credentials_configured() -> bool:
-    return bool(B2_KEY_ID and B2_APPLICATION_KEY)
+    return bool(S3_ACCESS_KEY_ID and S3_SECRET_ACCESS_KEY)
 
 
 def create_s3_filesystem():
@@ -57,8 +55,8 @@ def create_s3_filesystem():
     import s3fs
 
     return s3fs.S3FileSystem(
-        key=B2_KEY_ID,
-        secret=B2_APPLICATION_KEY,
+        key=S3_ACCESS_KEY_ID,
+        secret=S3_SECRET_ACCESS_KEY,
         endpoint_url=ENDPOINT_URL,
         config_kwargs={
             "max_pool_connections": 50,
@@ -71,8 +69,8 @@ def create_s3_filesystem():
 
 def s3_storage_options() -> dict:
     return {
-        "key": B2_KEY_ID,
-        "secret": B2_APPLICATION_KEY,
+        "key": S3_ACCESS_KEY_ID,
+        "secret": S3_SECRET_ACCESS_KEY,
         "client_kwargs": {"endpoint_url": ENDPOINT_URL},
     }
 
@@ -144,10 +142,10 @@ def upload_zarr(local_path: Path | str, remote_name: str | None = None) -> str:
     from botocore.exceptions import ClientError, ReadTimeoutError
     import s3fs
 
-    print("Connecting to Backblaze B2...")
+    print("Connecting to S3-compatible storage...")
     fs = s3fs.S3FileSystem(
-        key=B2_KEY_ID,
-        secret=B2_APPLICATION_KEY,
+        key=S3_ACCESS_KEY_ID,
+        secret=S3_SECRET_ACCESS_KEY,
         endpoint_url=ENDPOINT_URL,
         config_kwargs={
             "max_pool_connections": 50,

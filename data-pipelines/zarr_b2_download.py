@@ -15,14 +15,12 @@ for _env_path in (_REPO_ROOT / ".env", Path(__file__).resolve().parent / ".env")
 else:
     load_dotenv()
 
-B2_KEY_ID = (
+S3_ACCESS_KEY_ID = (
     os.getenv("B2_KEY_ID")
-    or os.getenv("AWS_ACCESS_KEY_ID")
     or os.getenv("MINIO_ROOT_USER")
 )
-B2_APPLICATION_KEY = (
+S3_SECRET_ACCESS_KEY = (
     os.getenv("B2_APPLICATION_KEY")
-    or os.getenv("AWS_SECRET_ACCESS_KEY")
     or os.getenv("MINIO_ROOT_PASSWORD")
 )
 ENDPOINT_URL = (
@@ -42,15 +40,17 @@ DEFAULT_OUTPUT_DIR = _REPO_ROOT / "data-pipelines" / "output" / "zarr_download"
 
 
 def create_fs():
-    if not (B2_KEY_ID and B2_APPLICATION_KEY):
+    if not (S3_ACCESS_KEY_ID and S3_SECRET_ACCESS_KEY):
         raise RuntimeError(
-            "B2 credentials missing. Set B2_KEY_ID and B2_APPLICATION_KEY in .env"
+            "S3 credentials missing. Set one of: "
+            "B2_KEY_ID/B2_APPLICATION_KEY, "
+            "or MINIO_ROOT_USER/MINIO_ROOT_PASSWORD."
         )
     import s3fs
 
     return s3fs.S3FileSystem(
-        key=B2_KEY_ID,
-        secret=B2_APPLICATION_KEY,
+        key=S3_ACCESS_KEY_ID,
+        secret=S3_SECRET_ACCESS_KEY,
         endpoint_url=ENDPOINT_URL,
         config_kwargs={"max_pool_connections": 50},
     )

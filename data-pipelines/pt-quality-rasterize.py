@@ -45,7 +45,7 @@ def main():
         help="Output Zarr path.",
     )
     parser.add_argument(
-        "--upload", action="store_true", help="Upload to Backblaze B2 after writing."
+        "--upload", action="store_true", help="Upload to local MinIO (S3-compatible) after writing."
     )
     parser.add_argument(
         "--force", action="store_true", help="Overwrite existing output (handled by to_zarr mode='w')."

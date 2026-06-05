@@ -1,4 +1,4 @@
-"""Download all Zarr stores from Backblaze B2 to a local directory."""
+"""Download all Zarr stores from local MinIO to a local directory."""
 
 from __future__ import annotations
 
@@ -106,7 +106,7 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(
-        description="Download all Zarr stores from Backblaze B2."
+        description="Download all Zarr stores from local MinIO."
     )
     parser.add_argument(
         "--output-dir",

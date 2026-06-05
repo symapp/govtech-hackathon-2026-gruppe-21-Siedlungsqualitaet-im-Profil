@@ -168,11 +168,11 @@ def select_s3_store() -> str | None:
 
 st.set_page_config(page_title="Zarr Visualizer", layout="wide")
 st.title("Dynamic GeoZarr Visualizer")
-st.caption("Load and visualize pipeline Zarr output from local disk or S3 (Backblaze B2).")
+st.caption("Load and visualize pipeline Zarr output from local disk or S3 (local MinIO).")
 
 data_source = st.sidebar.radio(
     "Data source",
-    options=["Local files", "S3 (Backblaze B2)"],
+    options=["Local files", "S3 (local MinIO)"],
     horizontal=True,
 )
 

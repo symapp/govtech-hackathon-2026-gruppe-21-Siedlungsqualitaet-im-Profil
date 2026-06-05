@@ -282,7 +282,7 @@ def main() -> None:
     parser.add_argument("--dry-run", action="store_true", help="Resolve and print the source asset without downloading/converting.")
     parser.add_argument("--ca-bundle", type=Path, default=None, help="Path to a PEM CA bundle. Defaults to certifi if installed.")
     parser.add_argument("--insecure", action="store_true", help="Disable TLS verification for local development only.")
-    parser.add_argument("--upload", action="store_true", help="Upload the Zarr store to Backblaze B2 after writing.")
+    parser.add_argument("--upload", action="store_true", help="Upload the Zarr store to local MinIO (S3-compatible) after writing.")
     parser.add_argument(
         "--remote-name",
         default=None,

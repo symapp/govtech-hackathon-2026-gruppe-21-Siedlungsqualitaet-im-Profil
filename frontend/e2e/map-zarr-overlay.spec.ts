@@ -139,7 +139,7 @@ test.describe('Zarr map overlay', () => {
       gen: window.__SIEDLUNG_OVERVIEW__?.generation ?? 0,
       zarrRequests: performance
         .getEntriesByType('resource')
-        .filter((e) => /zarr|backblazeb2/i.test(e.name)).length,
+        .filter((e) => /zarr|minio|egov-hackathon/i.test(e.name)).length,
     }));
 
     const slider = page.locator('.layer-weight-slider').first();
@@ -158,7 +158,7 @@ test.describe('Zarr map overlay', () => {
     const after = await page.evaluate(() =>
       performance
         .getEntriesByType('resource')
-        .filter((e) => /zarr|backblazeb2/i.test(e.name)).length,
+        .filter((e) => /zarr|minio|egov-hackathon/i.test(e.name)).length,
     );
 
     expect(after - before.zarrRequests).toBeLessThan(30);

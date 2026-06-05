@@ -84,7 +84,7 @@ def main() -> None:
         help="Directory for output .zarr folders (default: data-pipelines cwd).",
     )
     parser.add_argument("--force", action="store_true", help="Overwrite existing .zarr outputs.")
-    parser.add_argument("--upload", action="store_true", help="Upload each Zarr to Backblaze B2.")
+    parser.add_argument("--upload", action="store_true", help="Upload each Zarr to local MinIO (S3-compatible).")
     parser.add_argument(
         "--remote-name",
         default=None,

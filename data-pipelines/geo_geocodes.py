@@ -302,7 +302,7 @@ def main() -> None:
     parser.add_argument(
         "--upload",
         action="store_true",
-        help="Upload to Backblaze B2 after writing.",
+        help="Upload to local MinIO (S3-compatible) after writing.",
     )
     parser.add_argument(
         "--remote-name",

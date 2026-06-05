@@ -1,4 +1,4 @@
-"""Upload local Zarr stores to Backblaze B2 via the S3-compatible API."""
+"""Upload local Zarr stores to local MinIO via the S3-compatible API."""
 
 from __future__ import annotations
 
@@ -46,7 +46,7 @@ def credentials_configured() -> bool:
 
 
 def create_s3_filesystem():
-    """S3-compatible filesystem for Backblaze B2."""
+    """S3-compatible filesystem for local MinIO."""
     if not credentials_configured():
         raise RuntimeError(
             "B2 credentials missing. Set B2_KEY_ID and B2_APPLICATION_KEY."

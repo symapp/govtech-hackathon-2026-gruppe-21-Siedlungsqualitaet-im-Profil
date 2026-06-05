@@ -15,7 +15,7 @@ All raster indicators share one national grid so layers stack pixel-perfectly in
 | CRS | EPSG:2056 (CH1903+ / LV95) |
 | Cell size | 100 m |
 | Extent (outer edges) | E 2 485 400–2 833 000, N 1 075 200–1 296 000 |
-| Storage | GeoZarr on Backblaze B2 (S3-compatible) |
+| Storage | GeoZarr on local MinIO (S3-compatible) |
 | Coordinates in Zarr | Cell **centers**; `y` decreases northward |
 
 Defined in `data-pipelines/are_rasterize_lib.py` (`SWISS_GRID_100M_EDGE_BOUNDS`) and mirrored in `frontend/src/app/config/zarr-layers.config.ts`.

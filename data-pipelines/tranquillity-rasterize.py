@@ -25,7 +25,7 @@ def main() -> None:
         default=Path(DEFAULT_ZARR_PATH),
         help="Output .zarr directory.",
     )
-    parser.add_argument("--upload", action="store_true", help="Upload to Backblaze B2 after writing.")
+    parser.add_argument("--upload", action="store_true", help="Upload to local MinIO (S3-compatible) after writing.")
     parser.add_argument("--force", action="store_true", help="Overwrite existing output directory.")
     parser.add_argument(
         "--percentile-cutoff",

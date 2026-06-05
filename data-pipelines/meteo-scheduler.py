@@ -5,7 +5,7 @@ Usage:
 
 The script fetches current Swiss meteo data from MeteoSwiss (geo.admin),
 converts it to GeoZarr format on the shared 100 m LV95 grid, uploads to
-Backblaze B2, and writes a meteo_manifest.json so the Angular frontend can
+local MinIO, and writes a meteo_manifest.json so the Angular frontend can
 detect fresh data.
 """
 

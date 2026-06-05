@@ -14,7 +14,7 @@ To ensure all spatial layers align perfectly without expensive on-the-fly reproj
 - **Format**: GeoZarr.
 
 ### Why GeoZarr?
-Zarr allows the frontend to fetch only the specific chunks of data needed for the current map view. This enables smooth visualization of multi-gigabyte datasets without a backend server—data is streamed directly from object storage (Backblaze B2).
+Zarr allows the frontend to fetch only the specific chunks of data needed for the current map view. This enables smooth visualization of multi-gigabyte datasets without a backend server—data is streamed directly from object storage (local MinIO).
 
 ---
 

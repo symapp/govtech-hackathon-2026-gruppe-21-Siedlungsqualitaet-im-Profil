@@ -10,7 +10,7 @@ This directory contains Python scripts for processing raw spatial data into norm
 ## 🚀 Usage
 
 ### Run All Pipelines
-To regenerate and upload all layers to Backblaze B2:
+To regenerate and upload all layers to the configured S3-compatible bucket (local MinIO by default):
 
 ```bash
 uv run python run-all-pipelines.py --force --upload
@@ -60,7 +60,7 @@ Per-factor sources, formulas, and scoring semantics: **[../INDICATORS.md](../IND
 
 - **`are_rasterize_lib.py`**: Shared utility functions for rasterizing ARE datasets to the standard 100m grid.
 - **`settlement_layer_meta.py`**: Generates JSON metadata (`p5`, `p95`) for each layer to drive frontend normalization.
-- **`zarr_b2_upload.py`**: Handles streaming upload of Zarr chunks to Backblaze B2.
+- **`zarr_b2_upload.py`**: Handles streaming upload of Zarr chunks to the configured S3-compatible bucket.
 
 ## 📐 Standard Grid (EPSG:2056)
 Every script ensures the output Zarr matches the standard Swiss grid resolution and extent to allow pixel-perfect stacking in the frontend.

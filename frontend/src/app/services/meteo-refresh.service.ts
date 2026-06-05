@@ -8,7 +8,7 @@ const POLL_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes
 const MANIFEST_URL = `${environment.zarrBaseUrl}/meteo_manifest.json`;
 
 /**
- * Polls meteo_manifest.json on B2 every 10 minutes.
+ * Polls meteo_manifest.json on object storage every 10 minutes.
  * When the `last_updated` timestamp changes, triggers a reload of the meteo
  * Zarr layers in ZarrMapService so the frontend picks up the fresh data.
  */

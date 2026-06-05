@@ -30,7 +30,7 @@ The project was developed as part of the BIT Hackathon.
 - **Language**: Python
 - **Package Manager**: uv
 - **Storage**: GeoZarr (EPSG:2056, 100m grid)
-- **Cloud Hosting**: Backblaze B2 (S3-compatible)
+- **Object Storage**: Local MinIO bucket (S3-compatible)
 
 ---
 
@@ -54,7 +54,7 @@ The pipelines process raw Swiss administrative data (ARE, BAFU, BFS) into normal
 cd data-pipelines
 uv run python run-all-pipelines.py --upload
 ```
-Note: Set Backblaze B2 credentials in a .env file at the root (see .env.example).
+Note: Set MinIO/S3 credentials in a .env file at the root (see .env.example).
 
 ---
 

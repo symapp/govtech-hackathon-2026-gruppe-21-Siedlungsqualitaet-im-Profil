@@ -16,12 +16,28 @@ for _env_path in (_REPO_ROOT / ".env", Path(__file__).resolve().parent / ".env")
 else:
     load_dotenv()
 
-B2_KEY_ID = os.getenv("B2_KEY_ID")
-B2_APPLICATION_KEY = os.getenv("B2_APPLICATION_KEY")
-ENDPOINT_URL = os.getenv(
-    "B2_ENDPOINT_URL", "https://s3.eu-central-003.backblazeb2.com"
+B2_KEY_ID = (
+    os.getenv("B2_KEY_ID")
+    or os.getenv("AWS_ACCESS_KEY_ID")
+    or os.getenv("MINIO_ROOT_USER")
 )
-BUCKET_NAME = os.getenv("B2_BUCKET_NAME", "egov-hackathon")
+B2_APPLICATION_KEY = (
+    os.getenv("B2_APPLICATION_KEY")
+    or os.getenv("AWS_SECRET_ACCESS_KEY")
+    or os.getenv("MINIO_ROOT_PASSWORD")
+)
+ENDPOINT_URL = (
+    os.getenv("B2_ENDPOINT_URL")
+    or os.getenv("S3_ENDPOINT_URL")
+    or os.getenv("MINIO_ENDPOINT_URL")
+    or "http://127.0.0.1:9000"
+)
+BUCKET_NAME = (
+    os.getenv("B2_BUCKET_NAME")
+    or os.getenv("S3_BUCKET_NAME")
+    or os.getenv("MINIO_BUCKET_NAME")
+    or "egov-hackathon"
+)
 CONNECT_TIMEOUT_SECONDS = int(os.getenv("B2_CONNECT_TIMEOUT_SECONDS", "30"))
 READ_TIMEOUT_SECONDS = int(os.getenv("B2_READ_TIMEOUT_SECONDS", "180"))
 UPLOAD_RETRIES = int(os.getenv("B2_UPLOAD_RETRIES", "4"))

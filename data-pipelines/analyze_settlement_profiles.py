@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import math
+import os
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -31,7 +32,19 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 OUT_JSON = Path(__file__).resolve().parent / "output" / "city_factor_profiles.json"
 OUT_MD = REPO_ROOT / "docs" / "PRESET_STATISTICS.md"
 
-ZARR_BASE = "https://egov-hackathon.s3.eu-central-003.backblazeb2.com"
+_bucket = (
+    os.getenv("B2_BUCKET_NAME")
+    or os.getenv("S3_BUCKET_NAME")
+    or os.getenv("MINIO_BUCKET_NAME")
+    or "egov-hackathon"
+)
+_endpoint = (
+    os.getenv("B2_ENDPOINT_URL")
+    or os.getenv("S3_ENDPOINT_URL")
+    or os.getenv("MINIO_ENDPOINT_URL")
+    or "http://127.0.0.1:9000"
+).rstrip("/")
+ZARR_BASE = os.getenv("ZARR_BASE_URL", f"{_endpoint}/{_bucket}")
 META_NAME = "settlement-layer-meta.json"
 
 WGS84_TO_LV95 = pyproj.Transformer.from_crs("EPSG:4326", "EPSG:2056", always_xy=True)
